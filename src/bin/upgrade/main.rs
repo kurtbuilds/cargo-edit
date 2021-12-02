@@ -235,7 +235,7 @@ impl Manifests {
         let selected_dependencies = only_update
             .into_iter()
             .map(|name| {
-                if let Some(dependency) = CrateName::new(&name).parse_as_version()? {
+                if let Some(dependency) = CrateName::new(&name).parse_version_or_features()? {
                     Ok((
                         dependency.name.clone(),
                         dependency.version().map(String::from),

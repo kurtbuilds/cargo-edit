@@ -59,19 +59,19 @@ pub struct Args {
 
     /// Specify a git repository to download the crate from.
     #[structopt(
-        long = "git",
-        value_name = "uri",
-        conflicts_with = "vers",
-        conflicts_with = "path"
+    long = "git",
+    value_name = "uri",
+    conflicts_with = "vers",
+    conflicts_with = "path"
     )]
     pub git: Option<String>,
 
     /// Specify a git branch to download the crate from.
     #[structopt(
-        long = "branch",
-        value_name = "branch",
-        conflicts_with = "vers",
-        conflicts_with = "path"
+    long = "branch",
+    value_name = "branch",
+    conflicts_with = "vers",
+    conflicts_with = "path"
     )]
     pub branch: Option<String>,
 
@@ -93,10 +93,10 @@ pub struct Args {
 
     /// Package id of the crate to add this dependency to.
     #[structopt(
-        long = "package",
-        short = "p",
-        value_name = "pkgid",
-        conflicts_with = "path"
+    long = "package",
+    short = "p",
+    value_name = "pkgid",
+    conflicts_with = "path"
     )]
     pub pkgid: Option<String>,
 
@@ -104,14 +104,14 @@ pub struct Args {
     /// modifier), "patch" (`~` modifier), "minor" (`^` modifier), "all" (`>=`), or "default" (no
     /// modifier).
     #[structopt(
-        long = "upgrade",
-        value_name = "method",
-        possible_value = "none",
-        possible_value = "patch",
-        possible_value = "minor",
-        possible_value = "all",
-        possible_value = "default",
-        default_value = "default"
+    long = "upgrade",
+    value_name = "method",
+    possible_value = "none",
+    possible_value = "patch",
+    possible_value = "minor",
+    possible_value = "all",
+    possible_value = "default",
+    default_value = "default"
     )]
     pub upgrade: String,
 
@@ -180,7 +180,16 @@ impl Args {
         let manifest_path = find(&self.manifest_path)?;
         let registry_url = registry_url(&manifest_path, self.registry.as_deref())?;
 
-        let mut dependency = if let Some(mut dependency) = crate_name.parse_as_version()? {
+        let mut dependency = if let Some(mut dependency) = crate_name.parse_version_or_features()? {
+            if dependency.version().is_none() {
+                let dep = get_latest_dependency(
+                    &dependency.name,
+                    self.allow_prerelease,
+                    &manifest_path,
+                    Some(&registry_url),
+                )?;
+                dependency = dependency.set_version(dep.version().unwrap())
+            }
             // crate specifier includes a version (e.g. `docopt@0.8`)
             if let Some(ref url) = self.git {
                 let url = url.clone();
@@ -400,6 +409,23 @@ mod tests {
         assert_eq!(
             args.parse_dependencies(None).unwrap(),
             vec![Dependency::new("demo").set_version("0.4.2")]
+        );
+    }
+
+    #[test]
+    fn test_parse_dependency_with_feature() {
+        std::env::set_var("CARGO_IS_TEST", "1");
+        let args = Args {
+            crates: vec!["your-face+nose".to_owned()],
+            ..Args::default()
+        };
+
+        assert_eq!(
+            args.parse_dependencies(None).unwrap(),
+            vec![Dependency::new("your-face")
+                .set_features(Some(vec!["nose".to_owned()]))
+                .set_version("99999.0.0")
+            ]
         );
     }
 

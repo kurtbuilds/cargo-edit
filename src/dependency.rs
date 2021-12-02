@@ -90,7 +90,9 @@ impl Dependency {
     }
     /// Set features as an array of string (does some basic parsing)
     pub fn set_features(mut self, features: Option<Vec<String>>) -> Dependency {
-        self.features = features;
+        if features.is_some() {
+            self.features = features;
+        }
         self
     }
 

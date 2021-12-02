@@ -26,13 +26,30 @@ impl<'a> CrateName<'a> {
 
     /// If this crate specifier includes a version (e.g. `docopt@0.8`), extract the name and
     /// version.
-    pub fn parse_as_version(&self) -> Result<Option<Dependency>> {
+    pub fn parse_version_or_features(&self) -> Result<Option<Dependency>> {
+        let mut name = self.0;
+        let mut features: Option<&str> = None;
+        let mut version: Option<&str> = None;
+        if self.0.contains('+') {
+            let xs: Vec<_> = self.0.splitn(2, '+').collect();
+            name = xs[0];
+            features = Some(xs[1]);
+        }
         if self.has_version() {
             let xs: Vec<_> = self.0.splitn(2, '@').collect();
-            let (name, version) = (xs[0], xs[1]);
-            semver::VersionReq::parse(version).chain_err(|| "Invalid crate version requirement")?;
-
-            Ok(Some(Dependency::new(name).set_version(version)))
+            name = xs[0];
+            version = Some(xs[1]);
+            semver::VersionReq::parse(version.unwrap()).chain_err(|| "Invalid crate version requirement")?;
+        }
+        if features.is_some() || version.is_some() {
+            let mut dep = Dependency::new(name);
+            if let Some(f) = features {
+                dep = dep.set_features(Some(f.split(',').map(|s| s.to_string()).collect()));
+            }
+            if let Some(v) = version {
+                dep = dep.set_version(v);
+            }
+            Ok(Some(dep))
         } else {
             Ok(None)
         }
