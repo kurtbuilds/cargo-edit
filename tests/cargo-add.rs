@@ -1320,7 +1320,7 @@ fn adds_features_dependency() {
 }
 
 #[test]
-fn warns_on_unknown_features_dependency() {
+fn errors_on_unknown_features_dependency() {
     let (_tmpdir, manifest) = clone_out_test("tests/fixtures/add/Cargo.toml.sample");
 
     // dependency not present beforehand
@@ -1334,19 +1334,19 @@ fn warns_on_unknown_features_dependency() {
         .arg(&manifest)
         .env("CARGO_IS_TEST", "1")
         .assert()
-        .success()
-        .stderr(predicates::str::contains(
-            "Unrecognized features: [\"noze\"]",
-        ))
+        .failure()
+        // .stderr(predicates::str::contains(
+        //     "Unrecognized features: [\"noze\"]",
+        // ))
         .stderr(predicates::str::contains("eyes"))
         .stderr(predicates::str::contains("nose"))
         .stderr(predicates::str::contains("mouth"))
         .stderr(predicates::str::contains("ears"));
 
-    // dependency is present afterwards
-    let toml = get_toml(&manifest);
-    let val = toml["dependencies"]["your-face"]["features"][0].as_str();
-    assert!(val.is_some());
+    // // dependency is present afterwards
+    // let toml = get_toml(&manifest);
+    // let val = toml["dependencies"]["your-face"]["features"][0].as_str();
+    // assert!(val.is_some());
 }
 
 #[test]

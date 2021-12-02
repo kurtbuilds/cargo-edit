@@ -9,6 +9,7 @@ use cargo_edit::{
 use cargo_edit::{get_latest_dependency, CrateName};
 use cargo_metadata::Package;
 use std::path::PathBuf;
+use std::process::exit;
 use structopt::{clap::AppSettings, StructOpt};
 
 use crate::errors::*;
@@ -188,7 +189,8 @@ impl Args {
                     &manifest_path,
                     Some(&registry_url),
                 )?;
-                dependency = dependency.set_version(dep.version().unwrap())
+                dependency = dependency.set_version(dep.version().unwrap());
+                dependency = dependency.set_available_features(dep.available_features);
             }
             // crate specifier includes a version (e.g. `docopt@0.8`)
             if let Some(ref url) = self.git {
@@ -203,15 +205,16 @@ impl Args {
 
                 dependency = dependency.set_available_features(manifest.features()?);
                 dependency = dependency.set_path(dep_path);
-            } else {
-                let features = get_features_from_registry(
-                    &dependency.name,
-                    dependency
-                        .version()
-                        .expect("version populated by `parse_as_version`"),
-                    &registry_url,
-                )?;
-                dependency = dependency.set_available_features(features);
+                // } else {
+                //     let features = get_features_from_registry(
+                //         &dependency.name,
+                //         dependency
+                //             .version()
+                //             .expect("version populated by `parse_as_version`"),
+                //         &registry_url,
+                //     )?;
+                //     println!("set available features 2 {:?}", &features);
+                //     dependency = dependency.set_available_features(features);
             }
 
             dependency
@@ -345,6 +348,13 @@ impl Args {
                             .set_optional(self.optional)
                             .set_features(requested_features.to_owned())
                             .set_default_features(!self.no_default_features);
+                        if let Some(ref features) = x.features {
+                            println!("features: {:?}. Available features: {:?}", features, x.available_features);
+                            let not_available = features.iter().filter(|f| !x.available_features.contains(&f)).collect::<Vec<_>>();
+                            if !not_available.is_empty() {
+                                panic!("You requested features that are not available: {:?}", not_available);
+                            }
+                        }
                         if let Some(ref rename) = self.rename {
                             x = x.set_rename(rename);
                         }
@@ -396,6 +406,7 @@ impl Default for Args {
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
     use super::*;
     use cargo_edit::Dependency;
 
@@ -424,6 +435,12 @@ mod tests {
             args.parse_dependencies(None).unwrap(),
             vec![Dependency::new("your-face")
                 .set_features(Some(vec!["nose".to_owned()]))
+                .set_available_features(vec![
+                    "nose".to_string(),
+                    "mouth".to_string(),
+                    "eyes".to_string(),
+                    "ears".to_string(),
+                ])
                 .set_version("99999.0.0")
             ]
         );

@@ -50,6 +50,7 @@ pub fn get_latest_dependency(
             vec![]
         };
 
+        eprintln!("Simulated registry response: {:?}", &features);
         return Ok(Dependency::new(crate_name)
             .set_version(&new_version)
             .set_available_features(features));
