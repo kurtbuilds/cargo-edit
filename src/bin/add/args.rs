@@ -9,7 +9,6 @@ use cargo_edit::{
 use cargo_edit::{get_latest_dependency, CrateName};
 use cargo_metadata::Package;
 use std::path::PathBuf;
-use std::process::exit;
 use structopt::{clap::AppSettings, StructOpt};
 
 use crate::errors::*;
@@ -60,10 +59,10 @@ pub struct Args {
 
     /// Specify a git repository to download the crate from.
     #[structopt(
-    long = "git",
-    value_name = "uri",
-    conflicts_with = "vers",
-    conflicts_with = "path"
+        long = "git",
+        value_name = "uri",
+        conflicts_with = "vers",
+        conflicts_with = "path"
     )]
     pub git: Option<String>,
 
@@ -94,10 +93,10 @@ pub struct Args {
 
     /// Package id of the crate to add this dependency to.
     #[structopt(
-    long = "package",
-    short = "p",
-    value_name = "pkgid",
-    conflicts_with = "path"
+        long = "package",
+        short = "p",
+        value_name = "pkgid",
+        conflicts_with = "path"
     )]
     pub pkgid: Option<String>,
 
@@ -105,14 +104,14 @@ pub struct Args {
     /// modifier), "patch" (`~` modifier), "minor" (`^` modifier), "all" (`>=`), or "default" (no
     /// modifier).
     #[structopt(
-    long = "upgrade",
-    value_name = "method",
-    possible_value = "none",
-    possible_value = "patch",
-    possible_value = "minor",
-    possible_value = "all",
-    possible_value = "default",
-    default_value = "default"
+        long = "upgrade",
+        value_name = "method",
+        possible_value = "none",
+        possible_value = "patch",
+        possible_value = "minor",
+        possible_value = "all",
+        possible_value = "default",
+        default_value = "default"
     )]
     pub upgrade: String,
 
@@ -205,16 +204,6 @@ impl Args {
 
                 dependency = dependency.set_available_features(manifest.features()?);
                 dependency = dependency.set_path(dep_path);
-                // } else {
-                //     let features = get_features_from_registry(
-                //         &dependency.name,
-                //         dependency
-                //             .version()
-                //             .expect("version populated by `parse_as_version`"),
-                //         &registry_url,
-                //     )?;
-                //     println!("set available features 2 {:?}", &features);
-                //     dependency = dependency.set_available_features(features);
             }
 
             dependency
